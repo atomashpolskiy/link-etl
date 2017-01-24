@@ -10,25 +10,17 @@
 		<attributes>
 			<attribute>
 				<type>java.lang.Integer</type>
-				<source>AGE</source>
+				<source>age</source>
 				<target>age</target>
 			</attribute>
 			<attribute>
 				<type>java.lang.String</type>
-				<source>DESCRIPTION</source>
-				<target>description</target>
-			</attribute>
-			<attribute>
-				<type>java.lang.String</type>
-				<source>NAME</source>
+				<source>name</source>
 				<target>name</target>
 			</attribute>
 		</attributes>
 		<properties>
-			<extractor.jdbc.sqltemplate>
-			<![CDATA[SELECT age, description, name FROM utest.etl1
-			]]>
-			</extractor.jdbc.sqltemplate>
+			<extractor.xml.xpathexpression>/docroot/element</extractor.xml.xpathexpression>
 		</properties>
 	</extractor>
 </config>
