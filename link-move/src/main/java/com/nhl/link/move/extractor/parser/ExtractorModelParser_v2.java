@@ -65,7 +65,7 @@ public class ExtractorModelParser_v2 implements DOMExtractorModelParser {
 					container.setType(e.getTextContent());
 					break;
 				case "connectorId":
-					container.setConnectorId(e.getTextContent());
+					container.addConnectorId(e.getTextContent());
 					break;
 
 				case "extractor":
@@ -113,8 +113,12 @@ public class ExtractorModelParser_v2 implements DOMExtractorModelParser {
 					extractor.setType(e.getTextContent());
 					break;
 				case "connectorId":
-					extractor.setConnectorId(e.getTextContent());
+					extractor.addConnectorId(e.getTextContent());
 					break;
+				case "connectorIds": {
+					processConnectorIds(e, extractor);
+					break;
+				}
 				case "attributes":
 					processAttributes(e, extractor);
 					break;
@@ -126,6 +130,21 @@ public class ExtractorModelParser_v2 implements DOMExtractorModelParser {
 		}
 
 		container.addExtractor(extractor.getName(), new ContainerAwareExtractorModel(container, extractor));
+	}
+
+	private void processConnectorIds(Element connectorIds, MutableExtractorModel extractor) {
+		NodeList nodes = connectorIds.getChildNodes();
+		int len = nodes.getLength();
+		for (int i = 0; i < len; i++) {
+
+			Node c = nodes.item(i);
+			if (Node.ELEMENT_NODE == c.getNodeType()) {
+				Element e = (Element) c;
+				if ("id".equals(e.getNodeName())) {
+					extractor.addConnectorId(e.getTextContent());
+				}
+			}
+		}
 	}
 
 	protected void processAttributes(Element attributesNode, MutableExtractorModel extractor)
