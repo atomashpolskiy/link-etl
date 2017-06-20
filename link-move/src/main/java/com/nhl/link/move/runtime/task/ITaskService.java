@@ -1,5 +1,6 @@
 package com.nhl.link.move.runtime.task;
 
+import com.nhl.link.move.runtime.task.createorupdatedb.CreateOrUpdateDbBuilder;
 import org.apache.cayenne.DataObject;
 
 import com.nhl.link.move.CreateOrUpdateBuilder;
@@ -14,6 +15,8 @@ public interface ITaskService {
 	 * @since 1.3
 	 */
 	<T extends DataObject> CreateOrUpdateBuilder<T> createOrUpdate(Class<T> type);
+
+	CreateOrUpdateDbBuilder createOrUpdate(String dbEntityName);
 
 	/**
 	 * Returns a builder of target delete ETL synchronization task.

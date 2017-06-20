@@ -1,0 +1,113 @@
+package com.nhl.link.move.runtime.task.createorupdatedb;
+
+import com.nhl.link.move.LmRuntimeException;
+import com.nhl.link.move.LmTask;
+import com.nhl.link.move.annotation.AfterSourceRowsConverted;
+import com.nhl.link.move.annotation.AfterSourcesMapped;
+import com.nhl.link.move.annotation.AfterTargetsCommitted;
+import com.nhl.link.move.annotation.AfterTargetsMatched;
+import com.nhl.link.move.annotation.AfterTargetsMerged;
+import com.nhl.link.move.extractor.model.ExtractorModel;
+import com.nhl.link.move.extractor.model.ExtractorName;
+import com.nhl.link.move.mapper.Mapper;
+import com.nhl.link.move.runtime.cayenne.ITargetCayenneService;
+import com.nhl.link.move.runtime.extractor.IExtractorService;
+import com.nhl.link.move.runtime.key.IKeyAdapterFactory;
+import com.nhl.link.move.runtime.task.BaseTaskBuilder;
+import com.nhl.link.move.runtime.task.ListenersBuilder;
+import com.nhl.link.move.runtime.task.MapperBuilder;
+import com.nhl.link.move.runtime.task.createorupdate.CreateOrUpdateStatsListener;
+import com.nhl.link.move.runtime.task.createorupdate.SourceMapper;
+import com.nhl.link.move.runtime.token.ITokenManager;
+import org.apache.cayenne.map.DbEntity;
+
+import java.util.Objects;
+
+/**
+ * A builder of an ETL task that matches source data with target data based on a
+ * certain unique attribute on both sides.
+ */
+public class CreateOrUpdateDbBuilder extends BaseTaskBuilder {
+
+	private IExtractorService extractorService;
+	private ITargetCayenneService targetCayenneService;
+	private ITokenManager tokenManager;
+	private Mapper mapper;
+	private ListenersBuilder stageListenersBuilder;
+	private DbEntity entity;
+
+	private ExtractorName extractorName;
+
+	public CreateOrUpdateDbBuilder(String dbEntityName,
+								   ITargetCayenneService targetCayenneService,
+								   IExtractorService extractorService,
+								   ITokenManager tokenManager,
+								   IKeyAdapterFactory keyAdapterFactory) {
+
+		this.targetCayenneService = targetCayenneService;
+		this.extractorService = extractorService;
+		this.tokenManager = tokenManager;
+
+		Objects.requireNonNull(dbEntityName);
+		DbEntity entity = targetCayenneService.entityResolver().getDbEntity(dbEntityName);
+		if (entity == null) {
+			throw new LmRuntimeException("DbEntity '" + dbEntityName + "' is not mapped in Cayenne");
+		}
+		this.entity = entity;
+
+		this.mapper = new MapperBuilder(entity, null, keyAdapterFactory).matchById().build();
+
+		this.stageListenersBuilder = new ListenersBuilder(AfterSourceRowsConverted.class, AfterSourcesMapped.class,
+				AfterTargetsMatched.class, AfterTargetsMerged.class, AfterTargetsCommitted.class);
+
+		// always add stats listener..
+		stageListener(CreateOrUpdateStatsListener.instance());
+	}
+
+	public CreateOrUpdateDbBuilder sourceExtractor(String location, String name) {
+		this.extractorName = ExtractorName.create(location, name);
+		return this;
+	}
+
+	public CreateOrUpdateDbBuilder sourceExtractor(String location) {
+		// v.1 model style config
+		return sourceExtractor(location, ExtractorModel.DEFAULT_NAME);
+	}
+
+	public CreateOrUpdateDbBuilder matchById() {
+		// already created
+		return this;
+	}
+
+	public CreateOrUpdateDbBuilder batchSize(int batchSize) {
+		this.batchSize = batchSize;
+		return this;
+	}
+
+	public CreateOrUpdateDbBuilder stageListener(Object listener) {
+		stageListenersBuilder.addListener(listener);
+		return this;
+	}
+
+	public LmTask task() throws IllegalStateException {
+
+		if (extractorName == null) {
+			throw new IllegalStateException("Required 'extractorName' is not set");
+		}
+
+		return new CreateOrUpdateDbTask(extractorName, batchSize, targetCayenneService, extractorService, tokenManager,
+				createProcessor());
+	}
+
+	private CreateOrUpdateSegmentProcessor createProcessor() {
+
+		SourceMapper sourceMapper = new SourceMapper(mapper);
+		TargetMatcher targetMatcher = new TargetMatcher(entity, mapper);
+		CreateOrUpdateMerger merger = new CreateOrUpdateMerger(mapper);
+		RowConverter rowConverter = new RowConverter();
+
+		return new CreateOrUpdateSegmentProcessor(rowConverter, sourceMapper, targetMatcher, merger,
+				stageListenersBuilder.getListeners());
+	}
+
+}

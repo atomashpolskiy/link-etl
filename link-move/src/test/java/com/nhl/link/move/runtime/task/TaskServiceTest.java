@@ -6,6 +6,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.nhl.link.move.writer.ITargetPropertyWriterService;
+import org.apache.cayenne.map.DbEntity;
 import org.apache.cayenne.map.EntityResolver;
 import org.apache.cayenne.map.ObjEntity;
 import org.junit.Before;
@@ -27,6 +28,8 @@ public class TaskServiceTest {
 	public void before() {
 
 		ObjEntity targetEntity = mock(ObjEntity.class);
+		DbEntity targetDbEntity = mock(DbEntity.class);
+		when(targetEntity.getDbEntity()).thenReturn(targetDbEntity);
 
 		EntityResolver resolver = mock(EntityResolver.class);
 		when(resolver.getObjEntity(any(Class.class))).thenReturn(targetEntity);

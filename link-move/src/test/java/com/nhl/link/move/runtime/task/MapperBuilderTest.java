@@ -6,6 +6,7 @@ import com.nhl.link.move.mapper.PathMapper;
 import com.nhl.link.move.runtime.key.KeyAdapterFactory;
 import com.nhl.link.move.runtime.path.EntityPathNormalizer;
 import org.apache.cayenne.exp.Property;
+import org.apache.cayenne.map.DbEntity;
 import org.apache.cayenne.map.ObjEntity;
 import org.junit.Before;
 import org.junit.Test;
@@ -23,13 +24,16 @@ public class MapperBuilderTest {
 	@Before
 	public void before() {
 
-		ObjEntity e = mock(ObjEntity.class);
+		ObjEntity objEntity = mock(ObjEntity.class);
+		DbEntity dbEntity = mock(DbEntity.class);
+		when(objEntity.getDbEntity()).thenReturn(dbEntity);
+
 		EntityPathNormalizer pathNormalizer = mock(EntityPathNormalizer.class);
 		when(pathNormalizer.normalize("a")).thenReturn("db:a");
 		when(pathNormalizer.normalize("b")).thenReturn("db:b");
 		when(pathNormalizer.normalize("c")).thenReturn("db:c");
 
-		builder = new MapperBuilder(e, pathNormalizer, new KeyAdapterFactory());
+		builder = new MapperBuilder(objEntity, pathNormalizer, new KeyAdapterFactory());
 	}
 
 	@Test

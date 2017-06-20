@@ -1,24 +1,5 @@
 package com.nhl.link.move.runtime.task.delete;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import java.lang.annotation.Annotation;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.cayenne.exp.Expression;
-import org.apache.cayenne.map.EntityResolver;
-import org.apache.cayenne.map.ObjAttribute;
-import org.apache.cayenne.map.ObjEntity;
-import org.junit.Before;
-import org.junit.Test;
-
 import com.nhl.link.move.annotation.AfterMissingTargetsFiltered;
 import com.nhl.link.move.annotation.AfterSourceKeysExtracted;
 import com.nhl.link.move.annotation.AfterTargetsMapped;
@@ -33,6 +14,26 @@ import com.nhl.link.move.runtime.task.StageListener;
 import com.nhl.link.move.runtime.task.sourcekeys.DefaultSourceKeysBuilder;
 import com.nhl.link.move.runtime.token.ITokenManager;
 import com.nhl.link.move.unit.cayenne.t.Etl1t;
+import org.apache.cayenne.exp.Expression;
+import org.apache.cayenne.map.DataMap;
+import org.apache.cayenne.map.DbEntity;
+import org.apache.cayenne.map.EntityResolver;
+import org.apache.cayenne.map.ObjAttribute;
+import org.apache.cayenne.map.ObjEntity;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.lang.annotation.Annotation;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class DefaultDeleteBuilderTest {
 
@@ -44,11 +45,21 @@ public class DefaultDeleteBuilderTest {
 		ObjAttribute matchAttribute = new ObjAttribute("abc");
 		matchAttribute.setType(Object.class.getName());
 
+		String dbEntityName = "dbentity";
+		DbEntity targetDbEntity = new DbEntity(dbEntityName);
+
 		ObjEntity targetEntity = new ObjEntity();
+
+		DataMap dataMap = mock(DataMap.class);
+		when(dataMap.getDbEntity(dbEntityName)).thenReturn(targetDbEntity);
+		targetEntity.setDataMap(dataMap);
+
+		targetEntity.setDbEntity(targetDbEntity);
 		targetEntity.addAttribute(matchAttribute);
 
 		EntityResolver resolver = mock(EntityResolver.class);
 		when(resolver.getObjEntity(any(Class.class))).thenReturn(targetEntity);
+		when(resolver.getDbEntity(dbEntityName)).thenReturn(targetDbEntity);
 
 		ITargetCayenneService cayenneService = mock(ITargetCayenneService.class);
 		when(cayenneService.entityResolver()).thenReturn(resolver);

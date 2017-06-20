@@ -1,5 +1,6 @@
 package com.nhl.link.move.runtime.task;
 
+import com.nhl.link.move.runtime.task.createorupdatedb.CreateOrUpdateDbBuilder;
 import org.apache.cayenne.DataObject;
 import org.apache.cayenne.di.Inject;
 import org.apache.cayenne.map.ObjEntity;
@@ -42,6 +43,11 @@ public class TaskService implements ITaskService {
 	public <T extends DataObject> CreateOrUpdateBuilder<T> createOrUpdate(Class<T> type) {
 		return new DefaultCreateOrUpdateBuilder<>(type, targetCayenneService, extractorService, tokenManager,
 				keyAdapterFactory, pathNormalizer, writerService);
+	}
+
+	@Override
+	public CreateOrUpdateDbBuilder createOrUpdate(String dbEntityName) {
+		return new CreateOrUpdateDbBuilder(dbEntityName, targetCayenneService, extractorService, tokenManager, keyAdapterFactory);
 	}
 
 	@Override

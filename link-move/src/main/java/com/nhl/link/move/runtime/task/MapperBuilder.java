@@ -1,22 +1,5 @@
 package com.nhl.link.move.runtime.task;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.apache.cayenne.exp.ExpressionFactory;
-import org.apache.cayenne.exp.Property;
-import org.apache.cayenne.exp.parser.ASTDbPath;
-import org.apache.cayenne.map.DbAttribute;
-import org.apache.cayenne.map.ObjAttribute;
-import org.apache.cayenne.map.ObjEntity;
-import org.apache.cayenne.map.ObjRelationship;
-
 import com.nhl.link.move.mapper.KeyAdapter;
 import com.nhl.link.move.mapper.Mapper;
 import com.nhl.link.move.mapper.MultiPathMapper;
@@ -24,6 +7,25 @@ import com.nhl.link.move.mapper.PathMapper;
 import com.nhl.link.move.mapper.SafeMapKeyMapper;
 import com.nhl.link.move.runtime.key.IKeyAdapterFactory;
 import com.nhl.link.move.runtime.path.EntityPathNormalizer;
+import org.apache.cayenne.exp.ExpressionFactory;
+import org.apache.cayenne.exp.Property;
+import org.apache.cayenne.exp.parser.ASTDbPath;
+import org.apache.cayenne.map.DbAttribute;
+import org.apache.cayenne.map.DbEntity;
+import org.apache.cayenne.map.ObjAttribute;
+import org.apache.cayenne.map.ObjEntity;
+import org.apache.cayenne.map.ObjRelationship;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * @since 1.3
@@ -33,11 +35,22 @@ public class MapperBuilder {
 	private IKeyAdapterFactory keyAdapterFactory;
 	private EntityPathNormalizer pathNormalizer;
 
-	private ObjEntity entity;
+	private Optional<ObjEntity> objEntity;
+	private DbEntity dbEntity;
 	private Set<String> paths;
 
 	public MapperBuilder(ObjEntity entity, EntityPathNormalizer pathNormalizer, IKeyAdapterFactory keyAdapterFactory) {
-		this.entity = entity;
+		this(entity, entity.getDbEntity(), pathNormalizer, keyAdapterFactory);
+	}
+
+	public MapperBuilder(DbEntity entity, EntityPathNormalizer pathNormalizer, IKeyAdapterFactory keyAdapterFactory) {
+		this(null, entity, pathNormalizer, keyAdapterFactory);
+	}
+
+	private MapperBuilder(ObjEntity objEntity, DbEntity dbEntity, EntityPathNormalizer pathNormalizer, IKeyAdapterFactory keyAdapterFactory) {
+		this.objEntity = Optional.ofNullable(objEntity);
+		this.dbEntity = Objects.requireNonNull(dbEntity);
+
 		this.keyAdapterFactory = keyAdapterFactory;
 		this.pathNormalizer = pathNormalizer;
 
@@ -74,9 +87,9 @@ public class MapperBuilder {
 
 	public MapperBuilder matchById() {
 
-		Collection<DbAttribute> pks = entity.getDbEntity().getPrimaryKeys();
+		Collection<DbAttribute> pks = dbEntity.getPrimaryKeys();
 		if (pks.isEmpty()) {
-			throw new IllegalStateException("Target entity has no PKs defined: " + entity.getDbEntityName());
+			throw new IllegalStateException("Target entity has no PKs defined: " + dbEntity.getName());
 		}
 
 		for (DbAttribute pk : pks) {
@@ -92,6 +105,10 @@ public class MapperBuilder {
 
 	@SuppressWarnings("deprecation")
 	Mapper createSafeKeyMapper(Mapper unsafe) {
+		if (!objEntity.isPresent()) {
+			return unsafe;
+		}
+
 		KeyAdapter keyAdapter;
 
 		if (paths.size() > 1) {
@@ -102,7 +119,7 @@ public class MapperBuilder {
 			keyAdapter = keyAdapterFactory.adapter(List.class);
 		} else {
 
-			Object attributeOrRelationship = ExpressionFactory.exp(paths.iterator().next()).evaluate(entity);
+			Object attributeOrRelationship = ExpressionFactory.exp(paths.iterator().next()).evaluate(objEntity.get());
 
 			Class<?> type;
 

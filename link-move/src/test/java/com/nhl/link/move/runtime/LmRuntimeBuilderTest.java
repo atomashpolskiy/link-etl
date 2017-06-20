@@ -11,6 +11,7 @@ import org.apache.cayenne.CayenneDataObject;
 import org.apache.cayenne.DataChannel;
 import org.apache.cayenne.configuration.server.ServerRuntime;
 import org.apache.cayenne.di.Binder;
+import org.apache.cayenne.map.DbEntity;
 import org.apache.cayenne.map.EntityResolver;
 import org.apache.cayenne.map.ObjEntity;
 import org.junit.Before;
@@ -30,7 +31,9 @@ public class LmRuntimeBuilderTest {
 	public void before() {
 
 		ObjEntity mockEntity = mock(ObjEntity.class);
+		DbEntity mockDbEntity = mock(DbEntity.class);
 		when(mockEntity.getName()).thenReturn("me");
+		when(mockEntity.getDbEntity()).thenReturn(mockDbEntity);
 
 		EntityResolver resolver = mock(EntityResolver.class);
 		when(resolver.getObjEntity(any(Class.class))).thenReturn(mockEntity);
