@@ -18,8 +18,8 @@ public class CreateOrUpdateDbIT extends LmIntegrationTest {
 	@Test
 	public void test_ByAttribute() {
 
-		LmTask task = etl.service(ITaskService.class).createOrUpdate("etl1t")
-				.sourceExtractor("com/nhl/link/move/itest/etl1_to_etl1t").matchBy("name").task();
+		LmTask task = etl.service(ITaskService.class).createOrUpdate("etl11t")
+				.sourceExtractor("com/nhl/link/move/itest/etl11_to_etl11t").matchBy("name").task();
 
 		srcRunSql("INSERT INTO utest.etl1 (NAME, AGE) VALUES ('a', 3)");
 		srcRunSql("INSERT INTO utest.etl1 (NAME, AGE) VALUES ('b', NULL)");
