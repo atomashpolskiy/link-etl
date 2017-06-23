@@ -8,6 +8,7 @@ import org.apache.cayenne.exp.Expression;
 import org.apache.cayenne.exp.ExpressionFactory;
 import org.apache.cayenne.exp.parser.ASTDbPath;
 import org.apache.cayenne.map.DbAttribute;
+import org.apache.cayenne.map.DbEntity;
 import org.apache.cayenne.map.DbJoin;
 import org.apache.cayenne.map.DbRelationship;
 import org.apache.cayenne.map.ObjAttribute;
@@ -46,6 +47,25 @@ public class PathNormalizer implements IPathNormalizer {
 		if (normalizer == null) {
 			EntityPathNormalizer newNormalizer = createNormalizer(root);
 			EntityPathNormalizer oldNormalizer = pathCache.putIfAbsent(root.getName(), newNormalizer);
+			normalizer = oldNormalizer != null ? oldNormalizer : newNormalizer;
+		}
+
+		return normalizer;
+	}
+
+	@Override
+	public EntityPathNormalizer normalizer(DbEntity root) {
+
+		if (root == null) {
+			throw new NullPointerException("Null root entity");
+		}
+
+		String name = ASTDbPath.DB_PREFIX + root.getName();
+		EntityPathNormalizer normalizer = pathCache.get(name);
+
+		if (normalizer == null) {
+			EntityPathNormalizer newNormalizer = createNormalizer(root);
+			EntityPathNormalizer oldNormalizer = pathCache.putIfAbsent(name, newNormalizer);
 			normalizer = oldNormalizer != null ? oldNormalizer : newNormalizer;
 		}
 
@@ -125,6 +145,107 @@ public class PathNormalizer implements IPathNormalizer {
 
 				List<PathComponent<DbAttribute, DbRelationship>> components = new ArrayList<>(2);
 				for (PathComponent<DbAttribute, DbRelationship> c : entity.getDbEntity().resolvePath(dbExp,
+						Collections.emptyMap())) {
+					components.add(c);
+				}
+
+				if (components.size() == 0) {
+					throw new LmRuntimeException("Null path. Entity: " + entity.getName());
+				}
+
+				if (components.size() > 1) {
+					throw new LmRuntimeException("Nested paths not supported. Path: " + dbExp);
+				}
+
+				PathComponent<DbAttribute, DbRelationship> c = components.get(0);
+
+				if (c.getAttribute() != null) {
+					return AttributeInfo.forAttribute(c.getAttribute());
+				}
+
+				DbRelationship dbRelationship = c.getRelationship();
+
+				List<DbJoin> joins = dbRelationship.getJoins();
+
+				// TODO: logic duplication from DefaultCreateOrUpdateBuilder...
+				if (joins.size() > 1) {
+					// TODO: support for multi-key to-one relationships
+					throw new LmRuntimeException("Multi-column FKs are not yet supported. Path: " + dbExp);
+				} else {
+					return AttributeInfo.forRelationship(joins.get(0));
+				}
+			}
+		};
+	}
+
+	private EntityPathNormalizer createNormalizer(DbEntity entity) {
+
+		return new EntityPathNormalizer() {
+
+			ConcurrentMap<String, AttributeInfo> cachedAttributes = new ConcurrentHashMap<>();
+
+			@Override
+			public String normalize(String path) {
+
+				if (!hasAttribute(entity, path)) {
+					return path;
+				}
+
+				if (path == null) {
+					throw new NullPointerException("Null path. Entity: " + entity.getName());
+				}
+
+				return getAttributeInfo(path).getNormalizedPath();
+			}
+
+			@Override
+			public Object normalizeValue(String path, Object value) {
+
+				if (!hasAttribute(entity, path)) {
+					return value;
+				}
+
+				if (value == null) {
+					return null;
+				}
+
+				AttributeInfo attributeInfo = getAttributeInfo(path);
+
+				String javaType = TypesMapping.getJavaBySqlType(attributeInfo.getType());
+
+				JdbcNormalizer<?> normalizer = jdbcNormalizers.get(javaType);
+				if (normalizer == null) {
+					return value;
+				} else {
+					return normalizer.normalize(value, attributeInfo.getTarget());
+				}
+			}
+
+			private boolean hasAttribute(DbEntity entity, String path) {
+				if (path.startsWith(ASTDbPath.DB_PREFIX)) {
+					path = path.replace(ASTDbPath.DB_PREFIX, "");
+				}
+				return entity.getAttributeMap().containsKey(path) || entity.getRelationshipMap().containsKey(path);
+			}
+
+			private AttributeInfo getAttributeInfo(String path) {
+
+				AttributeInfo normalizedInfo = cachedAttributes.get(path);
+				if (normalizedInfo == null) {
+					AttributeInfo newNormalizedInfo = doNormalize(path);
+					AttributeInfo oldNormalizedInfo = cachedAttributes.putIfAbsent(path, newNormalizedInfo);
+					normalizedInfo = oldNormalizedInfo != null ? oldNormalizedInfo : newNormalizedInfo;
+				}
+
+				return normalizedInfo;
+			}
+
+			private AttributeInfo doNormalize(String path) {
+
+				Expression dbExp = ExpressionFactory.dbPathExp(path);
+
+				List<PathComponent<DbAttribute, DbRelationship>> components = new ArrayList<>(2);
+				for (PathComponent<DbAttribute, DbRelationship> c : entity.resolvePath(dbExp,
 						Collections.emptyMap())) {
 					components.add(c);
 				}

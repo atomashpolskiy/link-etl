@@ -13,10 +13,13 @@ import com.nhl.link.move.mapper.Mapper;
 import com.nhl.link.move.runtime.cayenne.ITargetCayenneService;
 import com.nhl.link.move.runtime.extractor.IExtractorService;
 import com.nhl.link.move.runtime.key.IKeyAdapterFactory;
+import com.nhl.link.move.runtime.path.EntityPathNormalizer;
+import com.nhl.link.move.runtime.path.IPathNormalizer;
 import com.nhl.link.move.runtime.task.BaseTaskBuilder;
 import com.nhl.link.move.runtime.task.ListenersBuilder;
 import com.nhl.link.move.runtime.task.MapperBuilder;
 import com.nhl.link.move.runtime.task.createorupdate.CreateOrUpdateStatsListener;
+import com.nhl.link.move.runtime.task.createorupdate.RowConverter;
 import com.nhl.link.move.runtime.task.createorupdate.SourceMapper;
 import com.nhl.link.move.runtime.token.ITokenManager;
 import org.apache.cayenne.map.DbEntity;
@@ -32,9 +35,11 @@ public class CreateOrUpdateDbBuilder extends BaseTaskBuilder {
 	private IExtractorService extractorService;
 	private ITargetCayenneService targetCayenneService;
 	private ITokenManager tokenManager;
+	private MapperBuilder mapperBuilder;
 	private Mapper mapper;
 	private ListenersBuilder stageListenersBuilder;
 	private DbEntity entity;
+	private EntityPathNormalizer entityPathNormalizer;
 
 	private ExtractorName extractorName;
 
@@ -42,6 +47,7 @@ public class CreateOrUpdateDbBuilder extends BaseTaskBuilder {
 								   ITargetCayenneService targetCayenneService,
 								   IExtractorService extractorService,
 								   ITokenManager tokenManager,
+								   IPathNormalizer pathNormalizer,
 								   IKeyAdapterFactory keyAdapterFactory) {
 
 		this.targetCayenneService = targetCayenneService;
@@ -55,7 +61,8 @@ public class CreateOrUpdateDbBuilder extends BaseTaskBuilder {
 		}
 		this.entity = entity;
 
-		this.mapper = new MapperBuilder(entity, null, keyAdapterFactory).matchById().build();
+		this.entityPathNormalizer = pathNormalizer.normalizer(entity);
+		this.mapperBuilder = new MapperBuilder(entity, entityPathNormalizer, keyAdapterFactory);
 
 		this.stageListenersBuilder = new ListenersBuilder(AfterSourceRowsConverted.class, AfterSourcesMapped.class,
 				AfterTargetsMatched.class, AfterTargetsMerged.class, AfterTargetsCommitted.class);
@@ -74,8 +81,20 @@ public class CreateOrUpdateDbBuilder extends BaseTaskBuilder {
 		return sourceExtractor(location, ExtractorModel.DEFAULT_NAME);
 	}
 
+	public CreateOrUpdateDbBuilder matchBy(Mapper mapper) {
+		this.mapper = mapper;
+		return this;
+	}
+
+	public CreateOrUpdateDbBuilder matchBy(String... keyAttributes) {
+		this.mapper = null;
+		this.mapperBuilder.matchBy(keyAttributes);
+		return this;
+	}
+
 	public CreateOrUpdateDbBuilder matchById() {
-		// already created
+		this.mapper = null;
+		this.mapperBuilder.matchById();
 		return this;
 	}
 
@@ -101,10 +120,12 @@ public class CreateOrUpdateDbBuilder extends BaseTaskBuilder {
 
 	private CreateOrUpdateSegmentProcessor createProcessor() {
 
+		Mapper mapper = this.mapper != null ? this.mapper : mapperBuilder.build();
+
 		SourceMapper sourceMapper = new SourceMapper(mapper);
 		TargetMatcher targetMatcher = new TargetMatcher(entity, mapper);
 		CreateOrUpdateMerger merger = new CreateOrUpdateMerger(mapper);
-		RowConverter rowConverter = new RowConverter();
+		RowConverter rowConverter = new RowConverter(entityPathNormalizer);
 
 		return new CreateOrUpdateSegmentProcessor(rowConverter, sourceMapper, targetMatcher, merger,
 				stageListenersBuilder.getListeners());

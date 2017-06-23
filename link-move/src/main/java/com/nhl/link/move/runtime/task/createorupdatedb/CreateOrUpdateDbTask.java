@@ -11,7 +11,9 @@ import com.nhl.link.move.extractor.model.ExtractorName;
 import com.nhl.link.move.runtime.cayenne.ITargetCayenneService;
 import com.nhl.link.move.runtime.extractor.IExtractorService;
 import com.nhl.link.move.runtime.task.BaseTask;
+import com.nhl.link.move.runtime.task.createorupdate.CreateOrUpdateSegment;
 import com.nhl.link.move.runtime.token.ITokenManager;
+import org.apache.cayenne.DataRow;
 import org.apache.cayenne.ObjectContext;
 
 import java.util.List;
@@ -71,7 +73,7 @@ public class CreateOrUpdateDbTask extends BaseTask {
 
 			@Override
 			public void process(List<Row> rows) {
-				processor.process(execution, new CreateOrUpdateSegment(context, rows));
+				processor.process(execution, new CreateOrUpdateSegment<>(context, rows));
 			}
 		};
 	}

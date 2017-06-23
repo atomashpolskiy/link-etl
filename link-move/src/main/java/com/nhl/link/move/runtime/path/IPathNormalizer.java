@@ -1,5 +1,6 @@
 package com.nhl.link.move.runtime.path;
 
+import org.apache.cayenne.map.DbEntity;
 import org.apache.cayenne.map.ObjEntity;
 
 /**
@@ -8,4 +9,6 @@ import org.apache.cayenne.map.ObjEntity;
 public interface IPathNormalizer {
 
 	EntityPathNormalizer normalizer(ObjEntity root);
+
+	EntityPathNormalizer normalizer(DbEntity root);
 }

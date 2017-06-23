@@ -2,7 +2,10 @@ package com.nhl.link.move.runtime.task.createorupdatedb;
 
 import com.nhl.link.move.LmRuntimeException;
 import com.nhl.link.move.mapper.Mapper;
+import com.nhl.link.move.runtime.task.createorupdate.CreateOrUpdateTuple;
 import org.apache.cayenne.DataRow;
+import org.apache.cayenne.ObjectContext;
+import org.apache.cayenne.access.DataContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,21 +28,22 @@ public class CreateOrUpdateMerger {
 		this.mapper = mapper;
 	}
 
-	public void merge(List<CreateOrUpdateTuple> mapped) {
-		for (CreateOrUpdateTuple t : mapped) {
+	public void merge(List<CreateOrUpdateTuple<DataRow>> mapped) {
+		for (CreateOrUpdateTuple<DataRow> t : mapped) {
 			if (!t.isCreated()) {
 				merge(t.getSource(), t.getTarget());
 			}
 		}
 	}
 
-	public List<CreateOrUpdateTuple> map(Map<Object, Map<String, Object>> mappedSources,
-										 List<DataRow> matchedTargets) {
+	public List<CreateOrUpdateTuple<DataRow>> map(ObjectContext context,
+												  Map<Object, Map<String, Object>> mappedSources,
+												  List<DataRow> matchedTargets) {
 
         // clone mappedSources as we are planning to truncate it in this method
 		Map<Object, Map<String, Object>> localMappedSources = new HashMap<>(mappedSources);
 
-		List<CreateOrUpdateTuple> result = new ArrayList<>();
+		List<CreateOrUpdateTuple<DataRow>> result = new ArrayList<>();
 
 		for (DataRow t : matchedTargets) {
 
@@ -56,16 +60,16 @@ public class CreateOrUpdateMerger {
 
 			// skip phantom updates...
 			if (willUpdate(src, t)) {
-				result.add(new CreateOrUpdateTuple(src, t, false));
+				result.add(new CreateOrUpdateTuple<>(src, t, false));
 			}
 		}
 
 		// everything that's left are new objects
 		for (Map.Entry<Object, Map<String, Object>> e : localMappedSources.entrySet()) {
 
-			DataRow t = create(e.getValue());
+			DataRow t = create((DataContext) context, e.getValue());
 
-			result.add(new CreateOrUpdateTuple(e.getValue(), t, true));
+			result.add(new CreateOrUpdateTuple<>(e.getValue(), t, true));
 		}
 
 		return result;
@@ -88,7 +92,7 @@ public class CreateOrUpdateMerger {
 		return false;
 	}
 
-    protected DataRow create(Map<String, Object> source) {
+    protected DataRow create(DataContext context, Map<String, Object> source) {
 		return new DataRow(source);
 	}
 

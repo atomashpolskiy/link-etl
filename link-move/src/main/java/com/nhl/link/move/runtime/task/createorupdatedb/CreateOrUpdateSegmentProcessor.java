@@ -8,7 +8,10 @@ import com.nhl.link.move.annotation.AfterTargetsMapped;
 import com.nhl.link.move.annotation.AfterTargetsMatched;
 import com.nhl.link.move.annotation.AfterTargetsMerged;
 import com.nhl.link.move.runtime.task.StageListener;
+import com.nhl.link.move.runtime.task.createorupdate.CreateOrUpdateSegment;
+import com.nhl.link.move.runtime.task.createorupdate.RowConverter;
 import com.nhl.link.move.runtime.task.createorupdate.SourceMapper;
+import org.apache.cayenne.DataRow;
 
 import java.lang.annotation.Annotation;
 import java.util.List;
@@ -40,7 +43,7 @@ public class CreateOrUpdateSegmentProcessor {
 		this.listeners = stageListeners;
 	}
 
-	public void process(Execution exec, CreateOrUpdateSegment segment) {
+	public void process(Execution exec, CreateOrUpdateSegment<DataRow> segment) {
 
 		// execute create-or-update pipeline stages
 		convertSrc(exec, segment);
@@ -51,27 +54,27 @@ public class CreateOrUpdateSegmentProcessor {
 		commitTarget(exec, segment);
 	}
 
-	private void convertSrc(Execution exec, CreateOrUpdateSegment segment) {
+	private void convertSrc(Execution exec, CreateOrUpdateSegment<DataRow> segment) {
 		segment.setSources(rowConverter.convert(segment.getSourceRows()));
 		notifyListeners(AfterSourceRowsConverted.class, exec, segment);
 	}
 
-	private void mapSrc(Execution exec, CreateOrUpdateSegment segment) {
+	private void mapSrc(Execution exec, CreateOrUpdateSegment<DataRow> segment) {
 		segment.setMappedSources(mapper.map(segment.getSources()));
 		notifyListeners(AfterSourcesMapped.class, exec, segment);
 	}
 
-	private void matchTarget(Execution exec, CreateOrUpdateSegment segment) {
+	private void matchTarget(Execution exec, CreateOrUpdateSegment<DataRow> segment) {
 		segment.setMatchedTargets(matcher.match(segment.getContext(), segment.getMappedSources()));
 		notifyListeners(AfterTargetsMatched.class, exec, segment);
 	}
 
-	private void mapToTarget(Execution exec, CreateOrUpdateSegment segment) {
-		segment.setMerged(merger.map(segment.getMappedSources(), segment.getMatchedTargets()));
+	private void mapToTarget(Execution exec, CreateOrUpdateSegment<DataRow> segment) {
+		segment.setMerged(merger.map(segment.getContext(), segment.getMappedSources(), segment.getMatchedTargets()));
 		notifyListeners(AfterTargetsMapped.class, exec, segment);
 	}
 
-	private void mergeToTarget(Execution exec, CreateOrUpdateSegment segment) {
+	private void mergeToTarget(Execution exec, CreateOrUpdateSegment<DataRow> segment) {
 		merger.merge(segment.getMerged());
 		notifyListeners(AfterTargetsMerged.class, exec, segment);
 	}

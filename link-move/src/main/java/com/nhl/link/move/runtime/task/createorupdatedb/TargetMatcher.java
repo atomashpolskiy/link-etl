@@ -41,7 +41,7 @@ public class TargetMatcher {
 		if (expressions.isEmpty()) {
 			return Collections.emptyList();
 		} else {
-			return ObjectSelect.dbQuery(entity.getFullyQualifiedName()).where(ExpressionFactory.or(expressions)).select(context);
+			return ObjectSelect.dbQuery(entity.getName()).where(ExpressionFactory.or(expressions)).select(context);
 		}
 	}
 }
