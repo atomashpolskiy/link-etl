@@ -22,7 +22,10 @@ import com.nhl.link.move.runtime.task.createorupdate.CreateOrUpdateStatsListener
 import com.nhl.link.move.runtime.task.createorupdate.RowConverter;
 import com.nhl.link.move.runtime.task.createorupdate.SourceMapper;
 import com.nhl.link.move.runtime.token.ITokenManager;
+import org.apache.cayenne.dba.TypesMapping;
 import org.apache.cayenne.map.DbEntity;
+import org.apache.cayenne.map.ObjAttribute;
+import org.apache.cayenne.map.ObjEntity;
 
 import java.util.Objects;
 
@@ -60,6 +63,18 @@ public class CreateOrUpdateDbBuilder extends BaseTaskBuilder {
 			throw new LmRuntimeException("DbEntity '" + dbEntityName + "' is not mapped in Cayenne");
 		}
 		this.entity = entity;
+
+		ObjEntity objEntity = new ObjEntity(entity.getName() + "_temp");
+		entity.getAttributes().forEach(a -> {
+			if (!a.getName().equals("id")) {
+				ObjAttribute objAttribute = new ObjAttribute(a.getName(), TypesMapping.getJavaBySqlType(a.getType()), objEntity);
+				objAttribute.setDbAttributePath(a.getName());
+				objEntity.addAttribute(objAttribute);
+			}
+		});
+//		entity.getRelationships()
+		objEntity.setDbEntity(entity);
+		targetCayenneService.entityResolver().getDataMap("datamap-targets").addObjEntity(objEntity);
 
 		this.entityPathNormalizer = pathNormalizer.normalizer(entity);
 		this.mapperBuilder = new MapperBuilder(entity, entityPathNormalizer, keyAdapterFactory);

@@ -3,8 +3,12 @@ package com.nhl.link.move.runtime.task.createorupdatedb;
 import com.nhl.link.move.LmRuntimeException;
 import com.nhl.link.move.mapper.Mapper;
 import com.nhl.link.move.runtime.task.createorupdate.CreateOrUpdateTuple;
+import org.apache.cayenne.CayenneDataObject;
+import org.apache.cayenne.DataObject;
 import org.apache.cayenne.DataRow;
 import org.apache.cayenne.ObjectContext;
+import org.apache.cayenne.ObjectId;
+import org.apache.cayenne.PersistenceState;
 import org.apache.cayenne.access.DataContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +18,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * @since 1.3
@@ -93,7 +99,23 @@ public class CreateOrUpdateMerger {
 	}
 
     protected DataRow create(DataContext context, Map<String, Object> source) {
-		return new DataRow(source);
+		source = source.entrySet().stream().collect(Collectors.toMap(e -> e.getKey().substring(3), Map.Entry::getValue));
+		DataRow row = new DataRow(source);
+//		DataObject object = context.objectFromDataRow("etl11t_temp", row);
+//		object.setObjectId(new ObjectId("etl11t_temp", "id", source.get("id")));
+//		context.registerNewObject(object);
+		DataObject object = (DataObject) context.newObject("etl11t_temp");
+		object.setObjectId(new ObjectId("etl11t_temp", "id", source.get("id")));
+		context.registerNewObject(object);
+//		object.getObjectId().getIdSnapshot().clear();
+//		object.getObjectId().getIdSnapshot().put("id", source.get("id"));
+		source.forEach((k, v) -> {
+			if (!k.equals("id")) {
+				object.writePropertyDirectly(k, v);
+			}
+		});
+
+		return row;
 	}
 
 	private void merge(Map<String, Object> source, DataRow target) {

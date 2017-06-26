@@ -242,7 +242,7 @@ public class PathNormalizer implements IPathNormalizer {
 
 			private AttributeInfo doNormalize(String path) {
 
-				Expression dbExp = ExpressionFactory.dbPathExp(path);
+				Expression dbExp = path.startsWith(ASTDbPath.DB_PREFIX) ? ExpressionFactory.exp(path) : ExpressionFactory.dbPathExp(path);
 
 				List<PathComponent<DbAttribute, DbRelationship>> components = new ArrayList<>(2);
 				for (PathComponent<DbAttribute, DbRelationship> c : entity.resolvePath(dbExp,

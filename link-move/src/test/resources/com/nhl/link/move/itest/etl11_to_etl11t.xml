@@ -18,7 +18,7 @@
 		</attributes>
 		<properties>
 			<extractor.jdbc.sqltemplate>
-			<![CDATA[SELECT id, name FROM utest.etl9
+			<![CDATA[SELECT id, name FROM utest.etl11
 			]]>
 			</extractor.jdbc.sqltemplate>
 		</properties>
