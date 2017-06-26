@@ -28,6 +28,7 @@ import org.apache.cayenne.map.DbEntity;
 import org.apache.cayenne.map.ObjAttribute;
 import org.apache.cayenne.map.ObjEntity;
 
+import java.util.Collection;
 import java.util.Objects;
 
 /**
@@ -68,7 +69,16 @@ public class CreateOrUpdateDbBuilder extends BaseTaskBuilder {
 		}
 		this.dbEntity = entity;
 
-		ObjEntity objEntity = new ObjEntity(entity.getName() + "_temp");
+		Collection<ObjEntity> objEntities = entity.mappedObjEntities();
+		ObjEntity objEntity;
+		if (objEntities.isEmpty()) {
+			objEntity = new ObjEntity(entity.getName());
+		} else if (objEntities.size() == 1) {
+			objEntity = objEntities.iterator().next();
+		} else {
+			throw new LmRuntimeException("Db entity has several mapped object entities: " + dbEntityName);
+		}
+
 		entity.getAttributes().forEach(a -> {
 			if (!a.getName().equals("id")) {
 				ObjAttribute objAttribute = new ObjAttribute(a.getName(), TypesMapping.getJavaBySqlType(a.getType()), objEntity);
