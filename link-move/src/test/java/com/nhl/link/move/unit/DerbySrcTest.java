@@ -49,6 +49,11 @@ public abstract class DerbySrcTest {
 		context.performGenericQuery(new SQLTemplate(Object.class, "DELETE from utest.etl2"));
 		context.performGenericQuery(new SQLTemplate(Object.class, "DELETE from utest.etl4"));
 		context.performGenericQuery(new SQLTemplate(Object.class, "DELETE from utest.etl5"));
+		context.performGenericQuery(new SQLTemplate(Object.class, "DELETE from utest.etl6"));
+		context.performGenericQuery(new SQLTemplate(Object.class, "DELETE from utest.etl7"));
+		context.performGenericQuery(new SQLTemplate(Object.class, "DELETE from utest.etl8"));
+		context.performGenericQuery(new SQLTemplate(Object.class, "DELETE from utest.etl9"));
+		context.performGenericQuery(new SQLTemplate(Object.class, "DELETE from utest.etl11"));
 	}
 
 	protected void srcRunSql(String sql) {

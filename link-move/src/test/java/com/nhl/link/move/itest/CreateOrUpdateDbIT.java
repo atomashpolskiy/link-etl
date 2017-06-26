@@ -9,6 +9,7 @@ import com.nhl.link.move.unit.cayenne.t.Etl1t;
 import com.nhl.link.move.unit.cayenne.t.Etl3t;
 import com.nhl.link.move.unit.cayenne.t.Etl5t;
 import com.nhl.link.move.unit.cayenne.t.Etl9t;
+import org.apache.cayenne.query.EJBQLQuery;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -27,24 +28,25 @@ public class CreateOrUpdateDbIT extends LmIntegrationTest {
 		Execution e1 = task.run();
 		assertExec(2, 2, 0, 0, e1);
 		assertEquals(2, targetScalar("SELECT count(1) from utest.etl11t"));
-		assertEquals(1, targetScalar("SELECT count(1) from utest.etl11t WHERE NAME = 'a' AND ID = 1"));
-		assertEquals(1, targetScalar("SELECT count(1) from utest.etl11t WHERE NAME = 'b' AND ID = 2"));
+		assertEquals(1, targetScalar("SELECT count(1) from utest.etl11t WHERE NAME = 'a'"));
+		assertEquals(1, targetScalar("SELECT count(1) from utest.etl11t WHERE NAME = 'b'"));
 
-		srcRunSql("INSERT INTO utest.etl1 (NAME) VALUES ('c')");
-		srcRunSql("UPDATE utest.etl1 SET AGE = 5 WHERE NAME = 'a'");
+		srcRunSql("INSERT INTO utest.etl11 (ID, NAME) VALUES (3, 'c')");
+		srcRunSql("UPDATE utest.etl11 SET NAME = 'z' WHERE NAME = 'a'");
 
 		Execution e2 = task.run();
 		assertExec(3, 1, 1, 0, e2);
-		assertEquals(3, targetScalar("SELECT count(1) from utest.etl1t"));
-		assertEquals(1, targetScalar("SELECT count(1) from utest.etl1t WHERE NAME = 'a' AND age = 5"));
-		assertEquals(1, targetScalar("SELECT count(1) from utest.etl1t WHERE NAME = 'c' AND age is null"));
+		assertEquals(3, targetScalar("SELECT count(1) from utest.etl11t"));
+		assertEquals(1, targetScalar("SELECT count(1) from utest.etl11t WHERE NAME = 'z'"));
+		assertEquals(0, targetScalar("SELECT count(1) from utest.etl11t WHERE NAME = 'a'"));
+		assertEquals(1, targetScalar("SELECT count(1) from utest.etl11t WHERE NAME = 'c'"));
 
-		srcRunSql("DELETE FROM utest.etl1 WHERE NAME = 'a'");
+		srcRunSql("DELETE FROM utest.etl11 WHERE NAME = 'a'");
 
 		Execution e3 = task.run();
 		assertExec(2, 0, 0, 0, e3);
-		assertEquals(3, targetScalar("SELECT count(1) from utest.etl1t"));
-		assertEquals(1, targetScalar("SELECT count(1) from utest.etl1t WHERE NAME = 'a' AND age = 5"));
+		assertEquals(3, targetScalar("SELECT count(1) from utest.etl11t"));
+		assertEquals(1, targetScalar("SELECT count(1) from utest.etl11t WHERE NAME = 'a'"));
 
 		Execution e4 = task.run();
 		assertExec(2, 0, 0, 0, e4);

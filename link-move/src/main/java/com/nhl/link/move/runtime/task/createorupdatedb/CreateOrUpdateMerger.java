@@ -52,9 +52,8 @@ public class CreateOrUpdateMerger {
 		List<CreateOrUpdateTuple<DataRow>> result = new ArrayList<>();
 
 		for (DataRow t : matchedTargets) {
-
-			// TODO: re-using method with appropriate parameter type; this is unexpected behavior for library user
-			Object key = mapper.keyForSource(t);
+			DataObject object = ((DataContext) context).objectFromDataRow("etl11t_temp", t);
+			Object key = mapper.keyForTarget(object);
 
 			Map<String, Object> src = localMappedSources.remove(key);
 
