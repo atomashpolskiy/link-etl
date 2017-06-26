@@ -11,6 +11,7 @@ import org.apache.cayenne.reflect.PropertyVisitor;
 import org.apache.cayenne.reflect.ToManyProperty;
 import org.apache.cayenne.reflect.ToOneProperty;
 
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -32,13 +33,26 @@ public class TargetPropertyWriterService implements ITargetPropertyWriterService
     @Override
     public <T> TargetPropertyWriterFactory<T> getWriterFactory(Class<T> type) {
 
-        if (targetCayenneService.entityResolver().getObjEntity(type) == null) {
+        ObjEntity entity = targetCayenneService.entityResolver().getObjEntity(type);
+        if (entity == null) {
 			throw new LmRuntimeException("Java class " + type.getName() + " is not mapped in Cayenne");
 		}
 
+        return getOrCreateWriterFactory(entity, type);
+    }
+
+    @Override
+    public TargetPropertyWriterFactory<?> getWriterFactory(ObjEntity entity) {
+        Objects.requireNonNull(entity);
+        return getOrCreateWriterFactory(entity, Object.class);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> TargetPropertyWriterFactory<T> getOrCreateWriterFactory(ObjEntity entity, Class<T> type) {
+
         TargetPropertyWriterFactory<T> writerFactory = (TargetPropertyWriterFactory<T>) writerFactories.get(type);
         if (writerFactory == null) {
-            writerFactory = createWriterFactory(type);
+            writerFactory = createWriterFactory(entity, type);
             TargetPropertyWriterFactory existing = writerFactories.putIfAbsent(type, writerFactory);
             if (existing != null) {
                 writerFactory = existing;
@@ -47,9 +61,8 @@ public class TargetPropertyWriterService implements ITargetPropertyWriterService
         return writerFactory;
     }
 
-    private <T> TargetPropertyWriterFactory<T> createWriterFactory(Class<T> type) {
+    private <T> TargetPropertyWriterFactory<T> createWriterFactory(ObjEntity entity, Class<T> type) {
 
-        ObjEntity entity = targetCayenneService.entityResolver().getObjEntity(type);
         final TargetPropertyWriterFactory<T> writerFactory = new TargetPropertyWriterFactory<>(type, entity);
         ClassDescriptor descriptor = targetCayenneService.entityResolver().getClassDescriptor(entity.getName());
 

@@ -11,6 +11,7 @@ import com.nhl.link.move.runtime.task.StageListener;
 import com.nhl.link.move.runtime.task.createorupdate.CreateOrUpdateSegment;
 import com.nhl.link.move.runtime.task.createorupdate.RowConverter;
 import com.nhl.link.move.runtime.task.createorupdate.SourceMapper;
+import org.apache.cayenne.DataObject;
 import org.apache.cayenne.DataRow;
 
 import java.lang.annotation.Annotation;
@@ -43,9 +44,10 @@ public class CreateOrUpdateSegmentProcessor {
 		this.listeners = stageListeners;
 	}
 
-	public void process(Execution exec, CreateOrUpdateSegment<DataRow> segment) {
+	public void process(Execution exec, CreateOrUpdateSegment segment) {
 
 		// execute create-or-update pipeline stages
+		// TODO: using raw types because segment's matchedTargets and merged have different types in this scenario
 		convertSrc(exec, segment);
 		mapSrc(exec, segment);
 		matchTarget(exec, segment);
@@ -54,12 +56,12 @@ public class CreateOrUpdateSegmentProcessor {
 		commitTarget(exec, segment);
 	}
 
-	private void convertSrc(Execution exec, CreateOrUpdateSegment<DataRow> segment) {
+	private void convertSrc(Execution exec, CreateOrUpdateSegment<?> segment) {
 		segment.setSources(rowConverter.convert(segment.getSourceRows()));
 		notifyListeners(AfterSourceRowsConverted.class, exec, segment);
 	}
 
-	private void mapSrc(Execution exec, CreateOrUpdateSegment<DataRow> segment) {
+	private void mapSrc(Execution exec, CreateOrUpdateSegment<?> segment) {
 		segment.setMappedSources(mapper.map(segment.getSources()));
 		notifyListeners(AfterSourcesMapped.class, exec, segment);
 	}
@@ -69,12 +71,15 @@ public class CreateOrUpdateSegmentProcessor {
 		notifyListeners(AfterTargetsMatched.class, exec, segment);
 	}
 
-	private void mapToTarget(Execution exec, CreateOrUpdateSegment<DataRow> segment) {
-		segment.setMerged(merger.map(segment.getContext(), segment.getMappedSources(), segment.getMatchedTargets()));
+	@SuppressWarnings("unchecked")
+	private void mapToTarget(Execution exec, CreateOrUpdateSegment segment) {
+		// TODO: using raw types because segment.setMerged uses DataObject instead of DataRow
+		List<DataRow> matchedTargets = (List<DataRow>) segment.getMatchedTargets();
+		segment.setMerged(merger.map(segment.getContext(), segment.getMappedSources(), matchedTargets));
 		notifyListeners(AfterTargetsMapped.class, exec, segment);
 	}
 
-	private void mergeToTarget(Execution exec, CreateOrUpdateSegment<DataRow> segment) {
+	private void mergeToTarget(Execution exec, CreateOrUpdateSegment<DataObject> segment) {
 		merger.merge(segment.getMerged());
 		notifyListeners(AfterTargetsMerged.class, exec, segment);
 	}

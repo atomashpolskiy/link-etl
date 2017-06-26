@@ -22,6 +22,7 @@ import com.nhl.link.move.runtime.task.createorupdate.CreateOrUpdateStatsListener
 import com.nhl.link.move.runtime.task.createorupdate.RowConverter;
 import com.nhl.link.move.runtime.task.createorupdate.SourceMapper;
 import com.nhl.link.move.runtime.token.ITokenManager;
+import com.nhl.link.move.writer.ITargetPropertyWriterService;
 import org.apache.cayenne.dba.TypesMapping;
 import org.apache.cayenne.map.DbEntity;
 import org.apache.cayenne.map.ObjAttribute;
@@ -41,8 +42,10 @@ public class CreateOrUpdateDbBuilder extends BaseTaskBuilder {
 	private MapperBuilder mapperBuilder;
 	private Mapper mapper;
 	private ListenersBuilder stageListenersBuilder;
-	private DbEntity entity;
+	private DbEntity dbEntity;
+	private ObjEntity objEntity;
 	private EntityPathNormalizer entityPathNormalizer;
+	private ITargetPropertyWriterService writerService;
 
 	private ExtractorName extractorName;
 
@@ -51,7 +54,8 @@ public class CreateOrUpdateDbBuilder extends BaseTaskBuilder {
 								   IExtractorService extractorService,
 								   ITokenManager tokenManager,
 								   IPathNormalizer pathNormalizer,
-								   IKeyAdapterFactory keyAdapterFactory) {
+								   IKeyAdapterFactory keyAdapterFactory,
+								   ITargetPropertyWriterService writerService) {
 
 		this.targetCayenneService = targetCayenneService;
 		this.extractorService = extractorService;
@@ -62,7 +66,7 @@ public class CreateOrUpdateDbBuilder extends BaseTaskBuilder {
 		if (entity == null) {
 			throw new LmRuntimeException("DbEntity '" + dbEntityName + "' is not mapped in Cayenne");
 		}
-		this.entity = entity;
+		this.dbEntity = entity;
 
 		ObjEntity objEntity = new ObjEntity(entity.getName() + "_temp");
 		entity.getAttributes().forEach(a -> {
@@ -72,12 +76,14 @@ public class CreateOrUpdateDbBuilder extends BaseTaskBuilder {
 				objEntity.addAttribute(objAttribute);
 			}
 		});
-//		entity.getRelationships()
+//		dbEntity.getRelationships()
 		objEntity.setDbEntity(entity);
 		targetCayenneService.entityResolver().getDataMap("datamap-targets").addObjEntity(objEntity);
+		this.objEntity = objEntity;
 
 		this.entityPathNormalizer = pathNormalizer.normalizer(entity);
 		this.mapperBuilder = new MapperBuilder(entity, entityPathNormalizer, keyAdapterFactory);
+		this.writerService = writerService;
 
 		this.stageListenersBuilder = new ListenersBuilder(AfterSourceRowsConverted.class, AfterSourcesMapped.class,
 				AfterTargetsMatched.class, AfterTargetsMerged.class, AfterTargetsCommitted.class);
@@ -138,8 +144,8 @@ public class CreateOrUpdateDbBuilder extends BaseTaskBuilder {
 		Mapper mapper = this.mapper != null ? this.mapper : mapperBuilder.build();
 
 		SourceMapper sourceMapper = new SourceMapper(mapper);
-		TargetMatcher targetMatcher = new TargetMatcher(entity, mapper);
-		CreateOrUpdateMerger merger = new CreateOrUpdateMerger(mapper);
+		TargetMatcher targetMatcher = new TargetMatcher(dbEntity, mapper);
+		CreateOrUpdateMerger merger = new CreateOrUpdateMerger(objEntity, mapper, writerService.getWriterFactory(objEntity));
 		RowConverter rowConverter = new RowConverter(entityPathNormalizer);
 
 		return new CreateOrUpdateSegmentProcessor(rowConverter, sourceMapper, targetMatcher, merger,

@@ -48,7 +48,7 @@ public class TaskService implements ITaskService {
 	@Override
 	public CreateOrUpdateDbBuilder createOrUpdate(String dbEntityName) {
 		return new CreateOrUpdateDbBuilder(dbEntityName, targetCayenneService, extractorService, tokenManager,
-				pathNormalizer, keyAdapterFactory);
+				pathNormalizer, keyAdapterFactory, writerService);
 	}
 
 	@Override

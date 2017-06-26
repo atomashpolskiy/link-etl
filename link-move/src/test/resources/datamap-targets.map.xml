@@ -67,6 +67,7 @@
 	<db-entity name="etl11t" schema="utest">
 		<db-attribute name="id" type="INTEGER" isPrimaryKey="true" isMandatory="true"/>
 		<db-attribute name="name" type="VARCHAR" length="100"/>
+		<db-attribute name="age" type="INTEGER"/>
 	</db-entity>
 	<obj-entity name="Etl10t" className="com.nhl.link.move.unit.cayenne.t.Etl10t" dbEntityName="etl10t">
 		<obj-attribute name="name" type="java.lang.String" db-attribute-path="name"/>

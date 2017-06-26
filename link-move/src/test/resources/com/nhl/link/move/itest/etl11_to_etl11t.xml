@@ -5,20 +5,25 @@
 	<connectorId>derbysrc</connectorId>
 	<extractor>
 		<attributes>
-			<attribute>
-				<type>java.lang.Integer</type>
-				<source>ID</source>
-				<target>db:id</target>
-			</attribute>
+			<!--<attribute>-->
+				<!--<type>java.lang.Integer</type>-->
+				<!--<source>ID</source>-->
+				<!--<target>db:id</target>-->
+			<!--</attribute>-->
 			<attribute>
 				<type>java.lang.String</type>
 				<source>NAME</source>
 				<target>name</target>
 			</attribute>
+			<attribute>
+				<type>java.lang.Integer</type>
+				<source>AGE</source>
+				<target>age</target>
+			</attribute>
 		</attributes>
 		<properties>
 			<extractor.jdbc.sqltemplate>
-			<![CDATA[SELECT id, name FROM utest.etl11
+			<![CDATA[SELECT name, age FROM utest.etl11
 			]]>
 			</extractor.jdbc.sqltemplate>
 		</properties>

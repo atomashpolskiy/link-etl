@@ -22,24 +22,23 @@ public class CreateOrUpdateDbIT extends LmIntegrationTest {
 		LmTask task = etl.service(ITaskService.class).createOrUpdate("etl11t")
 				.sourceExtractor("com/nhl/link/move/itest/etl11_to_etl11t").matchBy("name").task();
 
-		srcRunSql("INSERT INTO utest.etl11 (ID, NAME) VALUES (1, 'a')");
-		srcRunSql("INSERT INTO utest.etl11 (ID, NAME) VALUES (2, 'b')");
+		srcRunSql("INSERT INTO utest.etl11 (ID, NAME, AGE) VALUES (1, 'a', 1)");
+		srcRunSql("INSERT INTO utest.etl11 (ID, NAME, AGE) VALUES (2, 'b', 2)");
 
 		Execution e1 = task.run();
 		assertExec(2, 2, 0, 0, e1);
 		assertEquals(2, targetScalar("SELECT count(1) from utest.etl11t"));
-		assertEquals(1, targetScalar("SELECT count(1) from utest.etl11t WHERE NAME = 'a'"));
-		assertEquals(1, targetScalar("SELECT count(1) from utest.etl11t WHERE NAME = 'b'"));
+		assertEquals(1, targetScalar("SELECT count(1) from utest.etl11t WHERE NAME = 'a' AND AGE = 1"));
+		assertEquals(1, targetScalar("SELECT count(1) from utest.etl11t WHERE NAME = 'b' AND AGE = 2"));
 
 		srcRunSql("INSERT INTO utest.etl11 (ID, NAME) VALUES (3, 'c')");
-		srcRunSql("UPDATE utest.etl11 SET NAME = 'z' WHERE NAME = 'a'");
+		srcRunSql("UPDATE utest.etl11 SET AGE = 5 WHERE NAME = 'a'");
 
 		Execution e2 = task.run();
 		assertExec(3, 1, 1, 0, e2);
 		assertEquals(3, targetScalar("SELECT count(1) from utest.etl11t"));
-		assertEquals(1, targetScalar("SELECT count(1) from utest.etl11t WHERE NAME = 'z'"));
-		assertEquals(0, targetScalar("SELECT count(1) from utest.etl11t WHERE NAME = 'a'"));
-		assertEquals(1, targetScalar("SELECT count(1) from utest.etl11t WHERE NAME = 'c'"));
+		assertEquals(1, targetScalar("SELECT count(1) from utest.etl11t WHERE NAME = 'a' AND age = 5"));
+		assertEquals(1, targetScalar("SELECT count(1) from utest.etl11t WHERE NAME = 'c' AND age is null"));
 
 		srcRunSql("DELETE FROM utest.etl11 WHERE NAME = 'a'");
 
