@@ -52,8 +52,9 @@ public class CreateOrUpdateMerger {
 
 		List<CreateOrUpdateTuple<DataObject>> result = new ArrayList<>();
 
-		for (DataRow t : matchedTargets) {
-			DataObject object = ((DataContext) context).objectFromDataRow(objEntity.getName(), t);
+		for (DataRow row : matchedTargets) {
+			// temporary object
+			DataObject object = ((DataContext) context).objectFromDataRow(objEntity.getName(), row);
 			Object key = mapper.keyForTarget(object);
 
 			Map<String, Object> src = localMappedSources.remove(key);
@@ -66,7 +67,7 @@ public class CreateOrUpdateMerger {
 
 			// skip phantom updates...
 			if (willUpdate(src, object)) {
-				result.add(new CreateOrUpdateTuple<>(src, create((DataContext) context, t, false), false));
+				result.add(new CreateOrUpdateTuple<>(src, object, false));
 			}
 		}
 
