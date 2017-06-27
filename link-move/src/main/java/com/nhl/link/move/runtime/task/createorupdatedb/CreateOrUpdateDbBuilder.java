@@ -73,22 +73,21 @@ public class CreateOrUpdateDbBuilder extends BaseTaskBuilder {
 		ObjEntity objEntity;
 		if (objEntities.isEmpty()) {
 			objEntity = new ObjEntity(entity.getName());
+			entity.getAttributes().forEach(a -> {
+				if (!a.getName().equals("id")) {
+					ObjAttribute objAttribute = new ObjAttribute(a.getName(), TypesMapping.getJavaBySqlType(a.getType()), objEntity);
+					objAttribute.setDbAttributePath(a.getName());
+					objEntity.addAttribute(objAttribute);
+				}
+			});
+//			dbEntity.getRelationships();
+			objEntity.setDbEntity(entity);
+			targetCayenneService.entityResolver().getDataMap("datamap-targets").addObjEntity(objEntity);
 		} else if (objEntities.size() == 1) {
 			objEntity = objEntities.iterator().next();
 		} else {
 			throw new LmRuntimeException("Db entity has several mapped object entities: " + dbEntityName);
 		}
-
-		entity.getAttributes().forEach(a -> {
-			if (!a.getName().equals("id")) {
-				ObjAttribute objAttribute = new ObjAttribute(a.getName(), TypesMapping.getJavaBySqlType(a.getType()), objEntity);
-				objAttribute.setDbAttributePath(a.getName());
-				objEntity.addAttribute(objAttribute);
-			}
-		});
-//		dbEntity.getRelationships()
-		objEntity.setDbEntity(entity);
-		targetCayenneService.entityResolver().getDataMap("datamap-targets").addObjEntity(objEntity);
 		this.objEntity = objEntity;
 
 		this.entityPathNormalizer = pathNormalizer.normalizer(entity);

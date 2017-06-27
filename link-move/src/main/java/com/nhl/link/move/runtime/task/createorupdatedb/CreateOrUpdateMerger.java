@@ -44,8 +44,8 @@ public class CreateOrUpdateMerger {
 	}
 
 	public List<CreateOrUpdateTuple<DataObject>> map(ObjectContext context,
-												  Map<Object, Map<String, Object>> mappedSources,
-												  List<DataRow> matchedTargets) {
+													 Map<Object, Map<String, Object>> mappedSources,
+													 List<DataRow> matchedTargets) {
 
         // clone mappedSources as we are planning to truncate it in this method
 		Map<Object, Map<String, Object>> localMappedSources = new HashMap<>(mappedSources);
@@ -74,7 +74,7 @@ public class CreateOrUpdateMerger {
 		// everything that's left are new objects
 		for (Map.Entry<Object, Map<String, Object>> e : localMappedSources.entrySet()) {
 
-			DataObject t = create((DataContext) context, e.getValue(), true);
+			DataObject t = create((DataContext) context, e.getValue());
 
 			result.add(new CreateOrUpdateTuple<>(e.getValue(), t, true));
 		}
@@ -103,24 +103,9 @@ public class CreateOrUpdateMerger {
 		return false;
 	}
 
-    protected DataObject create(DataContext context, Map<String, Object> source, boolean shouldRegister) {
-//		Map<String, Object> target = new HashMap<>();
-//		for (Map.Entry<String, Object> e : source.entrySet()) {
-//			if (e.getValue() != null) {
-//				target.put(e.getKey()/*.substring(3)*/, e.getValue());
-//			}
-//		}
+    protected DataObject create(DataContext context, Map<String, Object> source) {
 		DataObject target = (DataObject) context.newObject(objEntity.getName());
-		// TODO: ID
-//		object.setObjectId(new ObjectId("etl11t_temp", "id", source.get("id")));
-		if (shouldRegister) {
-			context.registerNewObject(target);
-		}
-//		target.forEach((k, v) -> {
-//			if (!k.equals("id")) {
-//				object.writePropertyDirectly(k, v);
-//			}
-//		});
+		context.registerNewObject(target);
 
 		for (Map.Entry<String, Object> e : source.entrySet()) {
 			TargetPropertyWriter writer = writerFactory.getOrCreateWriter(e.getKey());
