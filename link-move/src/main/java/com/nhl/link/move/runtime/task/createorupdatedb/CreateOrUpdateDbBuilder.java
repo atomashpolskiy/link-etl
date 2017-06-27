@@ -21,8 +21,10 @@ import com.nhl.link.move.runtime.task.MapperBuilder;
 import com.nhl.link.move.runtime.task.createorupdate.CreateOrUpdateStatsListener;
 import com.nhl.link.move.runtime.task.createorupdate.RowConverter;
 import com.nhl.link.move.runtime.task.createorupdate.SourceMapper;
+import com.nhl.link.move.runtime.task.createorupdate.TargetMatcher;
 import com.nhl.link.move.runtime.token.ITokenManager;
 import com.nhl.link.move.writer.ITargetPropertyWriterService;
+import org.apache.cayenne.DataRow;
 import org.apache.cayenne.dba.TypesMapping;
 import org.apache.cayenne.map.DbEntity;
 import org.apache.cayenne.map.ObjAttribute;
@@ -153,7 +155,7 @@ public class CreateOrUpdateDbBuilder extends BaseTaskBuilder {
 		Mapper mapper = this.mapper != null ? this.mapper : mapperBuilder.build();
 
 		SourceMapper sourceMapper = new SourceMapper(mapper);
-		TargetMatcher targetMatcher = new TargetMatcher(dbEntity, mapper);
+		TargetMatcher<DataRow> targetMatcher = TargetMatcher.matcher(dbEntity, mapper);
 		CreateOrUpdateMerger merger = new CreateOrUpdateMerger(objEntity, mapper, writerService.getWriterFactory(objEntity));
 		RowConverter rowConverter = new RowConverter(entityPathNormalizer);
 

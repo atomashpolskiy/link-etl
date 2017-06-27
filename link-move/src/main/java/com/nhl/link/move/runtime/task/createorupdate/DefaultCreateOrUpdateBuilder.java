@@ -1,15 +1,11 @@
 package com.nhl.link.move.runtime.task.createorupdate;
 
-import com.nhl.link.move.annotation.AfterTargetsCommitted;
-import org.apache.cayenne.DataObject;
-import org.apache.cayenne.exp.Property;
-import org.apache.cayenne.map.ObjEntity;
-
 import com.nhl.link.move.CreateOrUpdateBuilder;
 import com.nhl.link.move.LmRuntimeException;
 import com.nhl.link.move.LmTask;
 import com.nhl.link.move.annotation.AfterSourceRowsConverted;
 import com.nhl.link.move.annotation.AfterSourcesMapped;
+import com.nhl.link.move.annotation.AfterTargetsCommitted;
 import com.nhl.link.move.annotation.AfterTargetsMatched;
 import com.nhl.link.move.annotation.AfterTargetsMerged;
 import com.nhl.link.move.extractor.model.ExtractorModel;
@@ -25,6 +21,9 @@ import com.nhl.link.move.runtime.task.ListenersBuilder;
 import com.nhl.link.move.runtime.task.MapperBuilder;
 import com.nhl.link.move.runtime.token.ITokenManager;
 import com.nhl.link.move.writer.ITargetPropertyWriterService;
+import org.apache.cayenne.DataObject;
+import org.apache.cayenne.exp.Property;
+import org.apache.cayenne.map.ObjEntity;
 
 /**
  * A builder of an ETL task that matches source data with target data based on a
@@ -147,7 +146,7 @@ public class DefaultCreateOrUpdateBuilder<T extends DataObject> extends BaseTask
 		Mapper mapper = this.mapper != null ? this.mapper : mapperBuilder.build();
 
 		SourceMapper sourceMapper = new SourceMapper(mapper);
-		TargetMatcher<T> targetMatcher = new TargetMatcher<>(type, mapper);
+		TargetMatcher<T> targetMatcher = TargetMatcher.matcher(type, mapper);
 		CreateOrUpdateMerger<T> merger = new CreateOrUpdateMerger<>(type, mapper, writerService.getWriterFactory(type));
 		RowConverter rowConverter = new RowConverter(entityPathNormalizer);
 

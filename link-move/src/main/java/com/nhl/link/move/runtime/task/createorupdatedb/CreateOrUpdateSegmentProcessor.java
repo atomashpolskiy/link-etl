@@ -11,6 +11,7 @@ import com.nhl.link.move.runtime.task.StageListener;
 import com.nhl.link.move.runtime.task.createorupdate.CreateOrUpdateSegment;
 import com.nhl.link.move.runtime.task.createorupdate.RowConverter;
 import com.nhl.link.move.runtime.task.createorupdate.SourceMapper;
+import com.nhl.link.move.runtime.task.createorupdate.TargetMatcher;
 import org.apache.cayenne.DataObject;
 import org.apache.cayenne.DataRow;
 
@@ -26,14 +27,14 @@ public class CreateOrUpdateSegmentProcessor {
 
 	private RowConverter rowConverter;
 	private SourceMapper mapper;
-	private TargetMatcher matcher;
+	private TargetMatcher<DataRow> matcher;
 	private CreateOrUpdateMerger merger;
 
 	private Map<Class<? extends Annotation>, List<StageListener>> listeners;
 
 	public CreateOrUpdateSegmentProcessor(RowConverter rowConverter,
 										  SourceMapper mapper,
-										  TargetMatcher matcher,
+										  TargetMatcher<DataRow> matcher,
 										  CreateOrUpdateMerger merger,
 										  Map<Class<? extends Annotation>, List<StageListener>> stageListeners) {
 
